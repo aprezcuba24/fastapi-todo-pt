@@ -1,0 +1,37 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    image: fastapi-todo-app
+    container_name: fastapi-todo-app
+    depends_on:
+      - postgres
+    volumes:
+      - .:/app:z
+    env_file:
+      - ./.env
+    ports:
+      - '8000:8000'
+    command: sleep infinity
+
+  postgres:
+    image: postgres:17
+    container_name: fastapi-todo-postgres
+    command: '-d 1'
+    volumes:
+      - fastapi-todo-db-data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=main
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  fastapi-todo-db-data:
