@@ -39,5 +39,11 @@ def get_token(session: Session, user_in: UserLogin):
     return token
 
 
+def get_user_by_token(session: Session, token: str):
+    payload = jwt.decode(token, settings.SECRET, algorithms=[settings.JWT_ALGORITHM])
+    user = session.query(User).filter(User.id == payload["id"]).first()
+    return user
+
+
 def hash_password(password: str):
     return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt())
