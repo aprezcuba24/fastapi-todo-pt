@@ -9,6 +9,7 @@ class Settings(BaseSettings):
     POSTGRES_DB: str
     POSTGRES_HOST: str
     POSTGRES_PORT: int
+    API_PREFIX: str = "/api/v1"
     model_config = SettingsConfigDict(env_file=".env")
 
 
