@@ -1,14 +1,19 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, validator
 from typing import List
+from app.models import StatusEnum
+from datetime import datetime
 
 
-class ItemResponse(BaseModel):
+class ItemCreate(BaseModel):
     title: str
     description: str
 
 
-class ItemCreate(ItemResponse):
-    pass
+class ItemResponse(ItemCreate):
+    id: int
+    status: StatusEnum
+    created_at: datetime
+    updated_at: datetime
 
 
 class ListResponse(BaseModel):
@@ -16,3 +21,14 @@ class ListResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+
+class StatusUpdate(BaseModel):
+    status: str
+
+    @validator("status")
+    def validate_status(cls, v):
+        try:
+            return StatusEnum(v).value
+        except ValueError:
+            raise ValueError(f"Status must be one of: {[e.value for e in StatusEnum]}")
