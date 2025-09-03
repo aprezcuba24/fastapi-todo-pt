@@ -1,6 +1,6 @@
 from fastapi import APIRouter
 from app.api.dependencies import SessionDep, CurrentUser
-from app.services import create_item, list_item
+from app.services import create_item, list_item as service_list_item
 from app.dto import ItemCreate
 
 router = APIRouter(prefix="/items", tags=["items"])
@@ -8,7 +8,7 @@ router = APIRouter(prefix="/items", tags=["items"])
 
 @router.get("/")
 def list_item(session: SessionDep, current_user: CurrentUser):
-    return list_item(session, current_user)
+    return service_list_item(session, current_user)
 
 
 @router.post("/")
