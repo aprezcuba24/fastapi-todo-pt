@@ -2,6 +2,7 @@ def test_create_user(client):
     response = client.post(
         "/api/v1/users", json={"username": "test", "password": "1234", "name": "Tester"}
     )
+    print(response.json())
     assert response.status_code == 200
 
 

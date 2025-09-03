@@ -24,7 +24,7 @@ def setup_db():
     Base.metadata.drop_all(bind=engine)
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def db_session():
     session = TestingSessionLocal()
     try:
@@ -45,10 +45,10 @@ def client(db_session):
     yield TestClient(app)
 
 
-user = UserCreate(username="test", password="test", name="test")
+user = UserCreate(username="default-user-test", password="test", name="test")
 
 
-@pytest.fixture
+@pytest.fixture(scope="session")
 def default_user(db_session):
     yield create_user(db_session, user)
 
