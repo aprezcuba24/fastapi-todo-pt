@@ -10,5 +10,8 @@ def create_item(session: Session, item: ItemCreate, owner: User):
     return item
 
 
-def list_item(session: Session, owner: User):
-    return session.query(Item).filter(Item.owner_id == owner.id).all()
+def list_item(session: Session, owner: User, skip: int, limit: int):
+    query = session.query(Item).filter(Item.owner_id == owner.id)
+    total = query.count()
+    items = query.offset(skip).limit(limit).all()
+    return items, total
