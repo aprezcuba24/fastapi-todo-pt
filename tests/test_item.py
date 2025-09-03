@@ -23,6 +23,11 @@ def test_get_item(client_auth, db_session):
     assert response.status_code == 200
 
 
+def test_get_item_404(client_auth, db_session):
+    response = client_auth.get(f"/api/v1/items/10")
+    assert response.status_code == 404
+
+
 def test_update_item(client_auth, db_session):
     item = get_by_title("test", db_session)
     response = client_auth.put(
