@@ -275,3 +275,5 @@ tkc_api_rest/media/
 .env
 .envs/*
 !.envs/.local/
+
+test.db
