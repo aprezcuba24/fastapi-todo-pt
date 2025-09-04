@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Query
-from app.api.dependencies import SessionDep, CurrentUser
+from fastapi import APIRouter, Query, Depends
+from app.api.dependencies import SessionDep, CurrentUser, get_entity
 from app.services import (
     create_item,
     list_item as service_list_item,
@@ -9,6 +9,7 @@ from app.services import (
     change_status as service_change_status,
 )
 from app.dto import ItemCreate, ListResponse, StatusUpdate, ItemResponse
+from app.models import Item
 
 router = APIRouter(prefix="/items", tags=["items"])
 
@@ -30,27 +31,38 @@ def register(session: SessionDep, current_user: CurrentUser, item_in: ItemCreate
 
 
 @router.get("/{item_id}", response_model=ItemResponse)
-def get_item(session: SessionDep, current_user: CurrentUser, item_id: int):
-    return service_get_item(session, current_user, item_id)
+def get_item(
+    session: SessionDep,
+    current_user: CurrentUser,
+    item: Item = Depends(get_entity(Item)),
+):
+    return item
 
 
 @router.put("/{item_id}", response_model=ItemResponse)
 def update_item(
-    session: SessionDep, current_user: CurrentUser, item_id: int, item_in: ItemCreate
+    session: SessionDep,
+    current_user: CurrentUser,
+    item_in: ItemCreate,
+    item: Item = Depends(get_entity(Item)),
 ):
-    return service_update_item(session, current_user, item_id, item_in)
+    return service_update_item(session, current_user, item, item_in)
 
 
 @router.delete("/{item_id}")
-def delete_item(session: SessionDep, current_user: CurrentUser, item_id: int):
-    return service_delete_item(session, current_user, item_id)
+def delete_item(
+    session: SessionDep,
+    current_user: CurrentUser,
+    item: Item = Depends(get_entity(Item)),
+):
+    return service_delete_item(session, current_user, item)
 
 
 @router.patch("/{item_id}", response_model=ItemResponse)
 def update_item_status(
     session: SessionDep,
     current_user: CurrentUser,
-    item_id: int,
     status_update: StatusUpdate,
+    item: Item = Depends(get_entity(Item)),
 ):
-    return service_change_status(session, current_user, item_id, status_update.status)
+    return service_change_status(session, current_user, item, status_update.status)

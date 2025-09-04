@@ -28,35 +28,20 @@ def get_item(session: Session, owner: User, item_id: int):
     return item
 
 
-def update_item(session: Session, owner: User, item_id: int, item_in: ItemCreate):
-    item = (
-        session.query(Item)
-        .filter(Item.id == item_id, Item.owner_id == owner.id)
-        .first()
-    )
+def update_item(session: Session, owner: User, item: Item, item_in: ItemCreate):
     item = update_model(item, item_in)
     session.add(item)
     session.commit()
     return item
 
 
-def delete_item(session: Session, owner: User, item_id: int):
-    item = (
-        session.query(Item)
-        .filter(Item.id == item_id, Item.owner_id == owner.id)
-        .first()
-    )
+def delete_item(session: Session, owner: User, item: Item):
     session.delete(item)
     session.commit()
     return item
 
 
-def change_status(session: Session, owner: User, item_id: int, status: str):
-    item = (
-        session.query(Item)
-        .filter(Item.id == item_id, Item.owner_id == owner.id)
-        .first()
-    )
+def change_status(session: Session, owner: User, item: Item, status: str):
     item.status = status
     session.add(item)
     session.commit()
