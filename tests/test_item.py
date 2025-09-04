@@ -1,54 +1,75 @@
+import pytest
 from app.models import Item, StatusEnum
 
 
-def get_by_title(title: str, db_session):
-    return db_session.query(Item).filter(Item.title == title).first()
-
-
-def test_create_item(client_auth):
-    response = client_auth.post(
-        "/api/v1/items", json={"title": "test", "description": "test"}
+@pytest.mark.asyncio_cooperative
+async def test_create_item(client_auth):
+    response = await client_auth.post(
+        "/items", json={"title": "test", "description": "test"}
     )
     assert response.status_code == 200
 
 
-def test_items(client_auth):
-    response = client_auth.get("/api/v1/items")
+@pytest.mark.asyncio_cooperative
+async def test_items(client_auth):
+    await client_auth.post("/items", json={"title": "test", "description": "test"})
+    response = await client_auth.get("/items")
+    assert response.status_code == 200
+    assert response.json()["total"] == 1
+
+
+@pytest.mark.asyncio_cooperative
+async def test_get_item(client_auth):
+    response = await client_auth.post(
+        "/items", json={"title": "test", "description": "test"}
+    )
+    item = response.json()
+    response = await client_auth.get(f"/items/{item['id']}")
     assert response.status_code == 200
 
 
-def test_get_item(client_auth, db_session):
-    item = get_by_title("test", db_session)
-    response = client_auth.get(f"/api/v1/items/{item.id}")
-    assert response.status_code == 200
-
-
-def test_get_item_404(client_auth, db_session):
-    response = client_auth.get(f"/api/v1/items/10")
+@pytest.mark.asyncio_cooperative
+async def test_get_item_404(client_auth, db_session):
+    response = await client_auth.get(f"/items/10")
     assert response.status_code == 404
 
 
-def test_update_item(client_auth, db_session):
-    item = get_by_title("test", db_session)
-    response = client_auth.put(
-        f"/api/v1/items/{item.id}", json={"title": "test_update", "description": "test"}
+@pytest.mark.asyncio_cooperative
+async def test_update_item(client_auth, db_session):
+    response = await client_auth.post(
+        "/items", json={"title": "test", "description": "test"}
+    )
+    item = response.json()
+    response = await client_auth.put(
+        f"/items/{item['id']}", json={"title": "test_update", "description": "test"}
     )
     assert response.status_code == 200
+    assert response.json()["title"] == "test_update"
+    assert response.json()["description"] == "test"
 
 
-def test_update_item_status(client_auth, db_session):
-    item = get_by_title("test_update", db_session)
-    assert item.status == StatusEnum.pending
-    response = client_auth.patch(
-        f"/api/v1/items/{item.id}", json={"status": "completed"}
+@pytest.mark.asyncio_cooperative
+async def test_update_item_status(client_auth, db_session):
+    response = await client_auth.post(
+        "/items", json={"title": "test", "description": "test"}
     )
-    print(response.json())
+    item = response.json()
+    assert item["status"] == StatusEnum.pending.value
+    response = await client_auth.patch(
+        f"/items/{item['id']}", json={"status": "completed"}
+    )
     assert response.status_code == 200
     assert response.json()["status"] == StatusEnum.completed.value
 
 
-def test_delete_item(client_auth, db_session):
-    item = get_by_title("test_update", db_session)
-    response = client_auth.delete(f"/api/v1/items/{item.id}")
+@pytest.mark.asyncio_cooperative
+async def test_delete_item(client_auth, db_session):
+    response = await client_auth.post(
+        "/items", json={"title": "test", "description": "test"}
+    )
+    item = response.json()
+    response = await client_auth.delete(f"/items/{item['id']}")
     assert response.status_code == 200
-    assert get_by_title("test_update", db_session) == None
+    response = await client_auth.get("/items")
+    assert response.status_code == 200
+    assert response.json()["total"] == 0

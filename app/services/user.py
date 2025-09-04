@@ -1,32 +1,40 @@
 import jwt
 import bcrypt
-from sqlalchemy.orm import Session, load_only
+from sqlalchemy.orm import load_only
 from app.models.user import User
 from app.dto import UserCreate, UserLogin
 from app.config import settings
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select
 
 
-def find_by_username(session: Session, username: str):
-    user = session.query(User).filter(User.username == username).first()
-    return user
+async def find_by_username(session: AsyncSession, username: str):
+    user = await session.execute(
+        select(User)
+        .options(load_only(User.id, User.username, User.name))
+        .filter(User.username == username)
+    )
+    return user.scalar_one_or_none()
 
 
-def create_user(session: Session, user_in: UserCreate):
-    password = hash_password(user_in.password)
+async def create_user(session: AsyncSession, user_in: UserCreate):
+    password = str(hash_password(user_in.password))
     data = user_in.model_dump(exclude={"password"})
     user = User(**data, password=password)
     session.add(user)
-    session.commit()
+    await session.commit()
+    await session.refresh(user)
     return user
 
 
-def get_token(session: Session, user_in: UserLogin):
+async def get_token(session: AsyncSession, user_in: UserLogin):
     user = (
-        session.query(User)
-        .options(load_only(User.id, User.username, User.name))
-        .filter(User.username == user_in.username)
-        .first()
-    )
+        await session.execute(
+            select(User)
+            .options(load_only(User.id, User.username, User.name))
+            .filter(User.username == user_in.username)
+        )
+    ).scalar_one_or_none()
     password = hash_password(user_in.password)
     if not user or not bcrypt.checkpw(user_in.password.encode("utf-8"), password):
         return None
@@ -39,10 +47,8 @@ def get_token(session: Session, user_in: UserLogin):
     return token
 
 
-def get_user_by_token(session: Session, token: str):
-    payload = jwt.decode(token, settings.SECRET, algorithms=[settings.JWT_ALGORITHM])
-    user = session.query(User).filter(User.id == payload["id"]).first()
-    return user
+def decode_token(session: AsyncSession, token: str):
+    return jwt.decode(token, settings.SECRET, algorithms=[settings.JWT_ALGORITHM])
 
 
 def hash_password(password: str):

@@ -1,0 +1,51 @@
+@token = Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NCwidXNlcm5hbWUiOiJqb2huZG9lIiwibmFtZSI6IkpvaG4gRG9lIn0.EZmd_RdncOAFcwHhVMfWbjJpJvfQwUm07fAJiPe_f2k
+
+POST http://localhost:8000/api/v1/users/
+Content-Type: application/json
+
+{
+    "name": "John Doe",
+    "username": "johndoe",
+    "password": "admin"
+}
+
+###
+POST http://localhost:8000/api/v1/users/login/
+Content-Type: application/json
+
+{
+    "username": "johndoe",
+    "password": "admin"
+}
+
+###
+POST http://localhost:8000/api/v1/items/
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+    "title": "Item 1",
+    "description": "Item 1 description"
+}
+
+###
+GET http://localhost:8000/api/v1/items/
+Authorization: {{token}}
+
+###
+GET http://localhost:8000/api/v1/items/1
+Authorization: {{token}}
+
+###
+PUT http://localhost:8000/api/v1/items/1
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+    "title": "Item 1 updated",
+    "description": "Item 1 description updated"
+}
+
+###
+DELETE http://localhost:8000/api/v1/items/1
+Authorization: {{token}}
