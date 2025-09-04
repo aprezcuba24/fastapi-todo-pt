@@ -2,13 +2,14 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.db import get_session, async_session_maker, engine
-from app.services.user import create_user, get_token
+from app.services.user import create_user, get_token, find_by_username
 from app.dto import UserCreate
 
 
 TestingSessionLocal = async_session_maker
 
-@pytest_asyncio.fixture(scope="function", autouse=True)
+
+@pytest_asyncio.fixture(scope="function")
 async def db_session():
     async with engine.begin() as connection:
         async with TestingSessionLocal(bind=connection) as session:
@@ -39,13 +40,16 @@ async def client(db_session):
 user = UserCreate(username="default-user-test", password="test", name="test")
 
 
-@pytest_asyncio.fixture(scope="session")
+@pytest_asyncio.fixture
 async def default_user(db_session):
-    yield create_user(db_session, user)
+    user_db = await find_by_username(db_session, user.username)
+    if not user_db:
+        user_db = await create_user(db_session, user)
+    yield user_db
 
 
 @pytest_asyncio.fixture
 async def client_auth(client, default_user, db_session):
-    token = get_token(db_session, user)
+    token = await get_token(db_session, user)
     client.headers.update({"Authorization": f"Bearer {token}"})
     yield client

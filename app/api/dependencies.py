@@ -22,12 +22,12 @@ T = TypeVar("T", bound=Base)
 
 
 def get_entity(model: Type[T], id_name: str = "item_id"):
-    def dependency(
+    async def dependency(
         entity_id: int = Path(..., alias=id_name),
         db: Session = Depends(get_session),
         current_user: dict = Depends(get_token),
     ) -> T:
-        instance = get_item(db, entity_id, current_user)
+        instance = await get_item(db, entity_id, current_user)
         if not instance:
             raise HTTPException(status_code=404, detail=f"{model.__name__} not found")
         return instance
