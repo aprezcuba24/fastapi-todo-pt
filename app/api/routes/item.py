@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Query, Depends
-from app.api.dependencies import SessionDep, CurrentUser, get_entity
+from app.api.dependencies import SessionDep, Token, get_entity
 from app.services import (
     create_item,
     list_item as service_list_item,
@@ -17,23 +17,22 @@ router = APIRouter(prefix="/items", tags=["items"])
 @router.get("/", response_model=ListResponse)
 def list_item(
     session: SessionDep,
-    current_user: CurrentUser,
+    token: Token,
     skip: int = Query(0, ge=0),
     limit: int = Query(10, le=100),
 ):
-    items, total = service_list_item(session, current_user, skip, limit)
+    items, total = service_list_item(session, token, skip, limit)
     return {"items": items, "total": total, "skip": skip, "limit": limit}
 
 
 @router.post("/", response_model=ItemResponse)
-def register(session: SessionDep, current_user: CurrentUser, item_in: ItemCreate):
-    return create_item(session, item_in, current_user)
+def register(session: SessionDep, token: Token, item_in: ItemCreate):
+    return create_item(session, item_in, token)
 
 
 @router.get("/{item_id}", response_model=ItemResponse)
 def get_item(
     session: SessionDep,
-    current_user: CurrentUser,
     item: Item = Depends(get_entity(Item)),
 ):
     return item
@@ -42,27 +41,24 @@ def get_item(
 @router.put("/{item_id}", response_model=ItemResponse)
 def update_item(
     session: SessionDep,
-    current_user: CurrentUser,
     item_in: ItemCreate,
     item: Item = Depends(get_entity(Item)),
 ):
-    return service_update_item(session, current_user, item, item_in)
+    return service_update_item(session, item, item_in)
 
 
 @router.delete("/{item_id}")
 def delete_item(
     session: SessionDep,
-    current_user: CurrentUser,
     item: Item = Depends(get_entity(Item)),
 ):
-    return service_delete_item(session, current_user, item)
+    return service_delete_item(session, item)
 
 
 @router.patch("/{item_id}", response_model=ItemResponse)
 def update_item_status(
     session: SessionDep,
-    current_user: CurrentUser,
     status_update: StatusUpdate,
     item: Item = Depends(get_entity(Item)),
 ):
-    return service_change_status(session, current_user, item, status_update.status)
+    return service_change_status(session, item, status_update.status)
