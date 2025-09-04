@@ -1,4 +1,4 @@
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 from typing import List
 from app.models import StatusEnum
 from datetime import datetime
@@ -26,7 +26,7 @@ class ListResponse(BaseModel):
 class StatusUpdate(BaseModel):
     status: str
 
-    @validator("status")
+    @field_validator("status")
     def validate_status(cls, v):
         try:
             return StatusEnum(v).value
