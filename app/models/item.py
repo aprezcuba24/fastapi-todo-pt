@@ -25,9 +25,7 @@ class Item(Base):
         Enum(StatusEnum, name="status_enum"), nullable=False, default=StatusEnum.pending
     )
 
-    __table_args__ = (
-        Index("ix_items_id_owner_id", "id", "owner_id"),
-    )
+    __table_args__ = (Index("ix_items_id_owner_id", "id", "owner_id"),)
 
     def __repr__(self) -> str:
         return f"Item(id={self.id!r}, title={self.title!r}, status={self.status!r})"

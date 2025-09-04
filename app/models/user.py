@@ -12,9 +12,7 @@ class User(Base):
     password: Mapped[str] = mapped_column(String(255))
     items: Mapped[List["Item"]] = relationship(back_populates="owner")
 
-    __table_args__ = (
-        Index("ix_users_id", "id"),
-    )
+    __table_args__ = (Index("ix_users_id", "id"),)
 
     def __repr__(self) -> str:
         return f"User(id={self.id!r}, name={self.name!r}, username={self.username!r})"

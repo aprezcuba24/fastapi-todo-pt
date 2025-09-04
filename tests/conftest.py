@@ -1,60 +1,51 @@
-import pytest
-from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
-from fastapi.testclient import TestClient
-
+import pytest_asyncio
+from httpx import AsyncClient, ASGITransport
 from app.main import app
-from app.models import Base
-from app.db import get_session
+from app.db import get_session, async_session_maker, engine
 from app.services.user import create_user, get_token
-from app.dto import UserCreate, UserLogin
-
-SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
-
-engine = create_engine(
-    SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}
-)
-TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+from app.dto import UserCreate
 
 
-@pytest.fixture(scope="session", autouse=True)
-def setup_db():
-    Base.metadata.create_all(bind=engine)
-    yield
-    Base.metadata.drop_all(bind=engine)
+TestingSessionLocal = async_session_maker
+
+@pytest_asyncio.fixture(scope="function", autouse=True)
+async def db_session():
+    async with engine.begin() as connection:
+        async with TestingSessionLocal(bind=connection) as session:
+            try:
+                yield session
+            finally:
+                await session.rollback()
 
 
-@pytest.fixture(scope="session")
-def db_session():
-    session = TestingSessionLocal()
-    try:
-        yield session
-    finally:
-        session.close()
-
-
-@pytest.fixture
-def client(db_session):
-    def override_get_db():
+@pytest_asyncio.fixture
+async def client(db_session):
+    async def override_get_db():
         try:
             yield db_session
         finally:
             pass
 
     app.dependency_overrides[get_session] = override_get_db
-    yield TestClient(app)
+
+    async with AsyncClient(
+        transport=ASGITransport(app=app), base_url="http://testserver/api/v1"
+    ) as async_client:
+        yield async_client
+
+    app.dependency_overrides.clear()
 
 
 user = UserCreate(username="default-user-test", password="test", name="test")
 
 
-@pytest.fixture(scope="session")
-def default_user(db_session):
+@pytest_asyncio.fixture(scope="session")
+async def default_user(db_session):
     yield create_user(db_session, user)
 
 
-@pytest.fixture
-def client_auth(client, default_user, db_session):
+@pytest_asyncio.fixture
+async def client_auth(client, default_user, db_session):
     token = get_token(db_session, user)
     client.headers.update({"Authorization": f"Bearer {token}"})
     yield client
